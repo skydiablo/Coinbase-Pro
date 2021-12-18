@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace Coinbase;
 
-use GuzzleHttp\Client;
+use React\Http\Browser as Client;
+use React\Http\Message\Response;
+use React\Promise\Deferred;
+use React\Promise\PromiseInterface;
 
 final class Helpers
 {
     /**
-     * @var \GuzzleHttp\Client
+     * @var Client
      */
     private $client;
 
@@ -44,8 +47,8 @@ final class Helpers
     /**
      * @param string $method The request method
      * @param string $path The request path
-     * @param array $body The request body
-     * @param int $timestamp The request timestamp
+     * @param array|null $body The request body
+     * @param int|null $timestamp The request timestamp
      * @return string The request signature
      */
     private function sign(string $method, string $path, array $body = null, int $timestamp = null): string
@@ -64,9 +67,10 @@ final class Helpers
 
     /**
      * Build a path with an optional query string
-     * 
+     *
      * @param string $path The path
-     * @param array $options The query args
+     * @param array|null $options The query args
+     * @return string
      */
     public function withQuery(string $path, array $options = null): string
     {
@@ -80,47 +84,66 @@ final class Helpers
     /**
      * @param string $method The request method
      * @param string $path The request path
-     * @param array|string $body The request body
-     * @param int $timestamp The request timestamp
-     * @return array|string|object The response body
+     * @param array|null $body The request body
+     * @param int|null $timestamp The request timestamp
+     * @return PromiseInterface
      */
-    public function sendRequest(string $method, string $path, array $body = null, int $timestamp = null): array|string|object
+    public function sendRequest(string $method, string $path, array $body = null, int $timestamp = null): PromiseInterface
     {
+        $deferred = new Deferred();
         $timestamp = is_null($timestamp) ? time() : $timestamp;
-        
-        $options = [
-            'headers' => [
-                'CB-ACCESS-KEY' => $this->key,
-                'CB-ACCESS-SIGN' => $this->sign($method, $path, $body, $timestamp),
-                'CB-ACCESS-TIMESTAMP' => $timestamp,
-                'CB-ACCESS-PASSPHRASE' => $this->passphrase
-            ]
+        $headers = [
+            'CB-ACCESS-KEY' => $this->key,
+            'CB-ACCESS-SIGN' => $this->sign($method, $path, $body, $timestamp),
+            'CB-ACCESS-TIMESTAMP' => $timestamp,
+            'CB-ACCESS-PASSPHRASE' => $this->passphrase
         ];
 
         if (is_array($body)) {
-            $options['json'] = $body;
+            $rawBody = json_encode($body);
+        } else {
+            $rawBody = null;
         }
 
-        $response = $this->client->request($method, $path, $options);
-        $status = $response->getStatusCode();
-        $body = json_decode((string) $response->getBody());
+        $this->client->request($method, $path, $headers, $rawBody)
+            ->then(function (Response $response) use ($deferred) {
+                $body = $response->getBody()->getContents();
+                $body = json_decode($body, true);
+                $status = $response->getStatusCode();
 
-        if (400 <= $status && $status <= 500) {
-            $message = $body->message;
-            $exception = 'Unknown'; 
-            
-            switch ($status) {
-                case 400: $exception = 'BadRequest'; break;
-                case 401: $exception = 'Unauthorized'; break;
-                case 403: $exception = 'Forbidden'; break;
-                case 404: $exception = 'NotFound'; break;
-                case 500: $exception = 'InternalServerError'; break;
-            }
+                if (400 <= $status && $status <= 500) {
+                    $message = $body['message'] ?? 'Unknown error';
+                    $exception = 'Unknown';
 
-            $class = __NAMESPACE__ . '\\Exceptions\\' . $exception . 'Exception';
-            throw new $class($status, $message);
-        }
+                    switch ($status) {
+                        case 400:
+                            $exception = 'BadRequest';
+                            break;
+                        case 401:
+                            $exception = 'Unauthorized';
+                            break;
+                        case 403:
+                            $exception = 'Forbidden';
+                            break;
+                        case 404:
+                            $exception = 'NotFound';
+                            break;
+                        case 500:
+                            $exception = 'InternalServerError';
+                            break;
+                    }
 
-        return $body;
+                    $class = __NAMESPACE__ . '\\Exceptions\\' . $exception . 'Exception';
+                    $deferred->reject(new $class($status, $message));
+                } else {
+                    $deferred->resolve($body);
+                }
+            }, function ($error) use ($deferred) {
+                $deferred->reject($error);
+            }, function ($p) use ($deferred) {
+                $deferred->notify($p);
+            });
+
+        return $deferred->promise();
     }
 }

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Coinbase;
 
-use GuzzleHttp\Client;
+use React\Http\Browser as Client;
 use Coinbase\Websocket\Client as Websocket;
 
 class Coinbase
@@ -11,40 +11,40 @@ class Coinbase
     /**
      * @var Coinbase
      */
-    private static $instance;
+    private static Coinbase $instance;
 
     /**
      * @var string
      */
-    private $key;
+    private string $key;
 
     /**
      * @var string
      */
-    private $secret;
+    private string $secret;
 
     /**
      * @var string
      */
-    private $passphrase;
+    private string $passphrase;
 
     /**
      * @var bool
      */
-    private $sandbox;
+    private bool $sandbox;
 
     /**
-     * @var GuzzleHttp\Client
+     * @var Client
      */
-    private $client;
+    private Client $client;
 
     /**
-     * @var Coinbase\Webscoket\Client
+     * @var Websocket
      */
     public $websocket;
 
     /**
-     * @var Coinbase\Helpers
+     * @var \Coinbase\Helpers
      */
     private $helpers;
 
@@ -65,11 +65,7 @@ class Coinbase
             $this->sandbox ? 'wss://ws-feed-public.sandbox.pro.coinbase.com' : 'wss://ws-feed.pro.coinbase.com'
         );
         
-        $this->client = new Client([
-            'base_uri' => $this->sandbox ? 'https://api-public.sandbox.pro.coinbase.com/' : 'https://api.pro.coinbase.com/',
-            'http_errors' => false
-        ]);
-
+        $this->client = (new Client())->withBase($this->sandbox ? 'https://api-public.sandbox.pro.coinbase.com' : 'https://api.pro.coinbase.com');
         $this->helpers = new Helpers($this->client, $this->key, $this->secret, $this->passphrase);
     }
 

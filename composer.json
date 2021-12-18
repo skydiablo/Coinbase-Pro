@@ -17,6 +17,10 @@
         {
             "name": "Blake Hamilton",
             "email": "blake.d.hamilton@outlook.com"
+        },
+        {
+            "name": "Volker von Hoeßlin",
+            "email": "skydiablo@gmx.net"
         }
     ],
     "require-dev": {
@@ -24,6 +28,6 @@
     },
     "require": {
         "ratchet/pawl": "^0.3.5",
-        "guzzlehttp/guzzle": "^7.3"
+        "react/http": "^1.5"
     }
 }
