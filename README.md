@@ -40,7 +40,7 @@ The latest version can be installed via Composer, therefore you will need to [in
 
 Next, require the library with:
 ```console
-composer require blakedhamilton/coinbase-pro
+composer require skydiablo/coinbase-pro
 ```
 
 <br>
