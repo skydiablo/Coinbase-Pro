@@ -8,11 +8,6 @@
             "Coinbase\\": "src/"
         }
     },
-    "autoload-dev": {
-        "psr-4": {
-            "Coinbase\\Tests\\": "tests/"
-        }
-    },
     "authors": [
         {
             "name": "Blake Hamilton",
@@ -23,9 +18,6 @@
             "email": "skydiablo@gmx.net"
         }
     ],
-    "require-dev": {
-        "phpunit/phpunit": "^9"
-    },
     "require": {
         "ratchet/pawl": "^0.3.5",
         "react/http": "^1.5"
