@@ -1,8 +1,9 @@
 # Coinbase Pro
 
-A library written in PHP to interact with Coinbase Pro via API. This is the ReactPHP variant with a Promise based interface.
+A library written in PHP to interact with Coinbase Pro via API. This is the ReactPHP variant with a Promise based 
+interface and inspired by [blakedhamilton/coinbase-pro](https://packagist.org/packages/blakedhamilton/coinbase-pro).
 
-https://packagist.org/packages/blakedhamilton/coinbase-pro<br>
+
 https://docs.pro.coinbase.com/
 
 <br>
